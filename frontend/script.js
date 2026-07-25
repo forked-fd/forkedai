@@ -2,7 +2,7 @@
 // Forked AI — Client-Side Application Engine (Clean Source)
 // ═══════════════════════════════════════════════════════════════
 
-const API_BASE_URL = window.location.origin + '/api';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || (window.location.origin + '/api');
 const MAX_RECORDING_MS = 60 * 1000; // 60 seconds max voice recording
 const TYPE_SPEED = 18; // Default typing speed in ms per character
 
