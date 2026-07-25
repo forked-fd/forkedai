@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════
-// Forked AI — Chat Routes (with Multimodal Support)
+// Forked AI — Chat Routes (API-Only)
 // ═══════════════════════════════════════════════════════════════
 import express from 'express';
 import fs from 'fs';
@@ -35,7 +35,6 @@ function getHistory(sessionId) {
 
 function addToHistory(sessionId, role, content) {
   const history = getHistory(sessionId);
-  // Store only text in history (not images, to save memory)
   const textContent = typeof content === 'string'
     ? content
     : Array.isArray(content)
@@ -65,6 +64,7 @@ router.post('/chat', uploadChatFiles, async (req, res, next) => {
     if ((!message || typeof message !== 'string' || message.trim().length === 0) && (!req.files || req.files.length === 0)) {
       return res.status(400).json({
         success: false,
+        error: 'Bad Request',
         message: 'Message or files are required',
       });
     }
@@ -76,15 +76,12 @@ router.post('/chat', uploadChatFiles, async (req, res, next) => {
     let hasImages = false;
 
     if (req.files && req.files.length > 0) {
-      // Multimodal message (text + files)
       const contentParts = [];
 
-      // Add text part
       if (message && message.trim()) {
         contentParts.push({ type: 'text', text: message.trim() });
       }
 
-      // Add image parts
       for (const file of req.files) {
         if (isImageMimeType(file.mimetype)) {
           hasImages = true;
@@ -94,7 +91,6 @@ router.post('/chat', uploadChatFiles, async (req, res, next) => {
             image_url: { url: dataUrl },
           });
         } else {
-          // For non-image files (text, CSV, etc.), read as text
           try {
             const textContent = file.buffer.toString('utf-8');
             contentParts.push({
@@ -110,14 +106,12 @@ router.post('/chat', uploadChatFiles, async (req, res, next) => {
         }
       }
 
-      // If no text was provided, add a default prompt
       if (!contentParts.some(p => p.type === 'text')) {
         contentParts.unshift({ type: 'text', text: 'Describe this image.' });
       }
 
       messageContent = contentParts;
     } else {
-      // Text-only message
       messageContent = message.trim();
     }
 
@@ -127,7 +121,6 @@ router.post('/chat', uploadChatFiles, async (req, res, next) => {
       hasImages: hasImages,
     });
 
-    // Add to history
     const userText = typeof messageContent === 'string' ? messageContent : message?.trim() || 'Image analysis';
     addToHistory(sessionId, 'user', userText);
     addToHistory(sessionId, 'assistant', result.data.response);
