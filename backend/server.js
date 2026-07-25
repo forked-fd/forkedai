@@ -1,59 +1,59 @@
 // ═══════════════════════════════════════════════════════════════
-// Forked AI — Express Server (Secured & Production-Ready)
+// Forked AI — Express Server (API-Only Mode)
 // ═══════════════════════════════════════════════════════════════
 import './config.js';
 import express from 'express';
 import cors from 'cors';
-import path from 'path';
-import fs from 'fs';
-import { fileURLToPath } from 'url';
 import helmet from 'helmet';
 import chatRouter from './chat.js';
 import { getProviderStatus } from './aiService.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 const app = express();
 const PORT = process.env.PORT || 5000;
 const isDev = (process.env.NODE_ENV || 'development') !== 'production';
-const frontendDir = path.resolve(__dirname, '..', 'frontend');
-const serveRootDir = fs.existsSync(path.join(frontendDir, 'index.html')) ? frontendDir : __dirname;
+
+// ─── CORS Configuration ────────────────────────────────────
+
+// قائمة العناوين المسموح بها (أضف عنوان الفرونت اند الخاص بك)
+const allowedOrigins = [
+  process.env.CLIENT_URL || 'http://localhost:3000',
+  'https://your-frontend-domain.vercel.app', // استبدل هذا بعنوانك الفعلي
+  'https://your-frontend-domain.netlify.app',
+  'http://localhost:3000',
+  'http://localhost:5173', // Vite
+  'http://localhost:8080',
+];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // السماح للطلبات بدون origin (مثل Postman)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin) || isDev) {
+      return callback(null, true);
+    }
+    
+    console.warn(`[CORS] Blocked origin: ${origin}`);
+    return callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+}));
 
 // ─── Security Middleware ────────────────────────────────────
 
-// Helmet for security headers (relaxed CSP for inline scripts/CDNs)
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdnjs.cloudflare.com"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", "data:", "blob:"],
-      connectSrc: ["'self'"],
-      mediaSrc: ["'self'", "blob:"],
-      workerSrc: ["'self'", "blob:"],
+      connectSrc: ["'self'", ...allowedOrigins],
     },
   },
-  crossOriginEmbedderPolicy: false, // Allow CDN resources
-}));
-
-// ─── CORS ───────────────────────────────────────────────────
-
-const configuredClientUrl = process.env.CLIENT_URL || `http://localhost:${PORT}`;
-const allowedOrigins = new Set([configuredClientUrl, `http://localhost:${PORT}`]);
-
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || isDev || allowedOrigins.has(origin)) {
-      return callback(null, true);
-    }
-    return callback(new Error('Not allowed by CORS'));
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type'],
+  crossOriginEmbedderPolicy: false,
 }));
 
 // ─── Body Parsing ───────────────────────────────────────────
@@ -61,117 +61,125 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// ─── Static Files ───────────────────────────────────────────
-
-app.use(express.static(serveRootDir, {
-  index: 'index.html',
-  dotfiles: 'deny', // Don't serve .env or .gitignore
-}));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
 // ─── API Routes ─────────────────────────────────────────────
 
 // Mount chat routes
 app.use('/api', chatRouter);
 
-// ─── Health & Frontend Routes ─────────────────────────────
+// ─── Health Check ──────────────────────────────────────────
 
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
-    service: 'forked-ai',
+    service: 'forked-ai-api',
     timestamp: new Date().toISOString(),
     providers: getProviderStatus(),
+    cors: {
+      allowedOrigins: allowedOrigins,
+      currentOrigin: req.headers.origin || 'none',
+    },
   });
 });
 
+// ─── Root (API Info) ──────────────────────────────────────
+
 app.get('/', (req, res) => {
-  res.sendFile(path.join(serveRootDir, 'index.html'));
+  res.json({
+    name: 'Forked AI API',
+    version: '2.0.0',
+    status: 'running',
+    endpoints: {
+      chat: {
+        method: 'POST',
+        path: '/api/chat',
+        description: 'Send a message to the AI',
+        body: {
+          message: 'string (required)',
+          sessionId: 'string (optional, default: "default")',
+        },
+      },
+      'chat/clear': {
+        method: 'POST',
+        path: '/api/chat/clear',
+        description: 'Clear conversation history',
+        body: {
+          sessionId: 'string (optional, default: "default")',
+        },
+      },
+      'chat/history': {
+        method: 'GET',
+        path: '/api/chat/history/:sessionId',
+        description: 'Get conversation history',
+      },
+      'upload/audio': {
+        method: 'POST',
+        path: '/api/upload/audio',
+        description: 'Upload audio for transcription',
+        body: 'multipart/form-data with "audio" field',
+      },
+      health: {
+        method: 'GET',
+        path: '/api/health',
+        description: 'Check API health',
+      },
+    },
+    docs: 'https://github.com/your-username/forked-ai-backend',
+  });
 });
 
 // ─── 404 Handler ────────────────────────────────────────────
 
 app.use((req, res) => {
-  if (req.originalUrl.startsWith('/api')) {
-    return res.status(404).json({
-      success: false,
-      error: 'Resource not found',
-      message: `Cannot ${req.method} ${req.originalUrl}`,
-    });
-  }
-
-  const ext = path.extname(req.originalUrl).toLowerCase();
-  const staticExtensions = ['.css', '.js', '.json', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico', '.webp', '.woff', '.woff2', '.ttf', '.eot'];
-
-  if (ext && staticExtensions.includes(ext)) {
-    return res.status(404).send('File not found');
-  }
-
-  // SPA fallback
-  res.sendFile(path.join(serveRootDir, 'index.html'));
+  res.status(404).json({
+    success: false,
+    error: 'Not Found',
+    message: `Cannot ${req.method} ${req.originalUrl}`,
+    availableEndpoints: [
+      'GET  /',
+      'GET  /api/health',
+      'POST /api/chat',
+      'POST /api/chat/clear',
+      'GET  /api/chat/history/:sessionId',
+      'POST /api/upload/audio',
+    ],
+  });
 });
 
 // ─── Error Handler ──────────────────────────────────────────
 
 app.use((err, req, res, _next) => {
   console.error('❌ Error:', err.message);
+  console.error('Stack:', err.stack);
 
   const statusCode = err.status || err.statusCode || 500;
   const message = err.message || 'Internal server error';
 
-  if (req.originalUrl.startsWith('/api')) {
-    return res.status(statusCode).json({
-      success: false,
-      error: message,
-      ...(isDev && { stack: err.stack }),
-    });
-  }
-
-  res.status(statusCode).send(`
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="UTF-8">
-      <title>Forked AI - Error</title>
-      <style>
-        body { font-family: -apple-system, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background: #070B16; color: #EAF0FF; }
-        .error-container { text-align: center; padding: 40px; background: #0C1324; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); max-width: 500px; border: 1px solid rgba(140,170,255,0.14); }
-        h1 { font-size: 72px; margin: 0; }
-        h2 { font-size: 24px; margin: 16px 0 8px; color: #EAF0FF; }
-        p { color: #93A2C7; margin: 8px 0 24px; }
-        a { display: inline-block; padding: 12px 32px; background: linear-gradient(135deg, #2F8AFF, #7C8CFF); color: white; text-decoration: none; border-radius: 8px; font-weight: 600; }
-        a:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(47,138,255,0.4); }
-      </style>
-    </head>
-    <body>
-      <div class="error-container">
-        <h1>😕</h1>
-        <h2>Something went wrong</h2>
-        <p>${message}</p>
-        <a href="/">Go Home</a>
-      </div>
-    </body>
-    </html>
-  `);
+  res.status(statusCode).json({
+    success: false,
+    error: message,
+    ...(isDev && { stack: err.stack }),
+  });
 });
 
 // ─── Start Server ───────────────────────────────────────────
 
-app.listen(PORT, () => {
-  console.log(`[Forked AI Core] Server listening on port ${PORT}`);
-  console.log(`  • Service URL: http://localhost:${PORT}`);
-  console.log(`  • API Base:    http://localhost:${PORT}/api`);
-  console.log(`  • Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`  • Security:    Helmet Headers & Rate Limiting active`);
+const startServer = () => {
+  app.listen(PORT, () => {
+    console.log('═══════════════════════════════════════════════════════════');
+    console.log('  🚀 Forked AI API Server (API-Only Mode)');
+    console.log('═══════════════════════════════════════════════════════════');
+    console.log(`  • Port:        ${PORT}`);
+    console.log(`  • Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`  • CORS:        ${allowedOrigins.join(', ')}`);
+    console.log(`  • API URL:     http://localhost:${PORT}`);
+    console.log(`  • Health:      http://localhost:${PORT}/api/health`);
+    console.log('═══════════════════════════════════════════════════════════\n');
+  });
+};
 
-  const frontendFiles = ['index.html', 'style.css', 'script.js'];
-  const missingFiles = frontendFiles.filter(file => !fs.existsSync(path.join(serveRootDir, file)));
-
-  if (missingFiles.length > 0) {
-    console.warn(`  • Status:      Missing static asset(s): ${missingFiles.join(', ')}`);
-  } else {
-    console.log(`  • Status:      Static assets verified and mounted\n`);
-  }
-});
+// للتوافق مع Vercel
+if (process.env.NODE_ENV !== 'production') {
+  startServer();
+}
 
 export default app;
