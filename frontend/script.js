@@ -2,7 +2,7 @@
 // Forked AI — Client-Side Application Engine v4.0
 // ═══════════════════════════════════════════════════════════════
 
-const API_BASE_URL = window.location.origin + '/api';
+const API_BASE_URL = 'https://forkedai.vercel.app/api';
 const TYPE_SPEED = 16;
 const MAX_RECORDING_MS = 60000;
 
