@@ -1,7 +1,7 @@
 {
   "name": "forked-ai-backend",
   "version": "2.0.0",
-  "description": "Forked AI — Multi-Provider AI Chat Backend with Voice, Image & File Support",
+  "description": "Forked AI — Multi-Provider AI Chat Backend API",
   "type": "module",
   "main": "server.js",
   "engines": {
@@ -10,7 +10,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "obfuscate": "npx javascript-obfuscator script.js --output script.js --compact true --control-flow-flattening true --dead-code-injection true --string-array true --string-array-encoding base64"
+    "vercel-build": "echo 'Build completed'"
   },
   "dependencies": {
     "cors": "^2.8.5",
