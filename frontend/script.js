@@ -2,7 +2,7 @@
 // Forked AI — Client-Side Application Engine (Clean Source)
 // ═══════════════════════════════════════════════════════════════
 
-const API_BASE_URL = window.location.origin + '/api';
+const API_BASE_URL = 'https://forkedai.vercel.app/api';
 const MAX_RECORDING_MS = 60 * 1000; // 60 seconds max voice recording
 const TYPE_SPEED = 26; // base ms delay PER TOKEN (word), not per character
 
