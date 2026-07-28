@@ -4,23 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Forked AI — Your premium AI assistant for Machine Learning, Data Science, and Programming">
-    <meta name="color-scheme" content="dark light">
-    <meta name="theme-color" content="#050816">
+    <meta name="color-scheme" content="dark">
+    <meta name="theme-color" content="#0c0f1a">
     <title>Forked AI — Professional AI Assistant</title>
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
     <!-- Syntax highlighting -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark-dimmed.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
-
-    <!-- KaTeX for math -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 
     <!-- Styles -->
     <link rel="stylesheet" href="style.css">
@@ -28,67 +23,59 @@
 </head>
 <body>
 
-    <!-- ─── Ambient Background ──────────────────────────────── -->
-    <div class="ambient-bg" aria-hidden="true">
-        <div class="ambient-gradient"></div>
-        <div class="ambient-noise"></div>
-        <div class="ambient-blob ambient-blob-1"></div>
-        <div class="ambient-blob ambient-blob-2"></div>
-        <div class="ambient-blob ambient-blob-3"></div>
-        <div class="ambient-blob ambient-blob-4"></div>
+    <!-- ── Layered Ambient Background ────────────────────────
+         1 Dark Gradient (CSS) → 2 Particle Network (hero) →
+         3 Mouse Glow → AI Glow → 4 Noise
+         Deliberately minimal — the particle network carries the visual weight. ── -->
+    <div class="bg-layers" aria-hidden="true">
+
+        <!-- Layer 2: Premium animated particle network — nodes, connections, energy pulses -->
+        <canvas class="bg-particles" id="particleCanvas"></canvas>
+
+        <!-- Layer 3: Mouse glow -->
+        <div class="mouse-glow" id="mouseGlow"></div>
+
+        <!-- AI ambient glow (brightens while thinking / typing) -->
+        <div class="bg-ai-glow" id="bgAiGlow"></div>
+
+        <!-- Layer 4: Noise texture -->
+        <div class="bg-noise"></div>
     </div>
 
-    <!-- ─── Drop Overlay ────────────────────────────────────── -->
-    <div class="drop-overlay" id="dropOverlay">
-        <div class="drop-icon">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                <polyline points="17 8 12 3 7 8"/>
-                <line x1="12" y1="3" x2="12" y2="15"/>
-            </svg>
-        </div>
-        <div class="drop-title" data-i18n="drop.title">Drop files here</div>
-        <div class="drop-subtitle" data-i18n="drop.subtitle">Images · PDFs · Code · Documents</div>
-        <div class="drop-types">
-            <span>📷 Images</span>
-            <span>📄 PDF</span>
-            <span>💻 Code</span>
-            <span>📊 Data</span>
-            <span>🎤 Audio</span>
-        </div>
+    <!-- Custom cursor: outer ring + inner dot + glow -->
+    <div class="custom-cursor" id="customCursor" aria-hidden="true">
+        <span class="cursor-ring"></span>
+        <span class="cursor-dot"></span>
     </div>
 
-    <!-- ─── Navigation ────────────────────────────────────────── -->
+    <!-- ── Navigation ─────────────────────────────────────── -->
     <nav class="navbar" role="navigation" aria-label="Main navigation">
         <div class="nav-container">
             <div class="nav-brand">
                 <div class="logo-icon">
-                    <img src="logo.png" alt="Forked AI Logo" class="brand-logo-img">
+                    <img src="log.png" alt="Forked AI Logo" class="brand-logo-img">
                 </div>
                 <span class="brand-name">Forked AI</span>
             </div>
 
             <div class="nav-actions">
-                <button class="nav-btn icon-only" id="themeToggle" type="button" aria-label="Toggle light/dark theme" title="Toggle theme">
-                    <svg class="theme-icon-sun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="4"/>
-                        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
-                    </svg>
-                    <svg class="theme-icon-moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
-                    </svg>
-                </button>
-
-                <button class="nav-btn" id="clearBtn" type="button" aria-label="Clear conversation" title="Clear conversation">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <!-- Clear button (injected by JS if needed) -->
+                <button class="clear-btn" id="clearBtn" type="button"
+                        aria-label="Clear conversation" title="Clear conversation">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="3 6 5 6 21 6"/>
                         <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
                     </svg>
                     <span data-i18n="clear.history">Clear</span>
                 </button>
 
-                <button class="nav-btn" id="langToggle" type="button" aria-label="Switch language">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <!-- Language toggle -->
+                <button class="lang-toggle" id="langToggle" type="button" aria-label="Switch language">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="10"/>
                         <line x1="2" y1="12" x2="22" y2="12"/>
                         <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
@@ -96,8 +83,11 @@
                     <span id="langToggleLabel">العربية</span>
                 </button>
 
-                <a href="https://forked-data.onrender.com/" class="nav-btn" aria-label="Go to home">
-                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <!-- Home link -->
+                <a href="https://forked-project.vercel.app/" class="nav-home" aria-label="Go to home">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round">
                         <path d="M3 12L5 10.5M21 12L19 10.5M5 10.5L12 3L19 10.5M5 10.5V19C5 19.5523 5.44772 20 6 20H9M19 10.5V19C19 19.5523 18.5523 20 18 20H15M9 20V15C9 14.4477 9.44772 14 10 14H14C14.5523 14 15 14.4477 15 15V20M9 20H15"/>
                     </svg>
                     <span data-i18n="nav.home">Home</span>
@@ -106,49 +96,38 @@
         </div>
     </nav>
 
-    <!-- ─── Hero ───────────────────────────────────────────────── -->
+    <!-- ── Hero ───────────────────────────────────────────── -->
     <section class="hero" aria-label="Welcome section">
-        <div class="hero-content">
+        <div class="hero-content reveal-on-scroll">
             <div class="hero-logo">
                 <img src="logo.png" alt="Forked AI Logo" class="hero-logo-img">
             </div>
             <h1 class="hero-title" data-i18n="hero.title">Welcome to Forked AI</h1>
             <p class="hero-subtitle" data-i18n-html="hero.subtitle">
                 Your AI Assistant for
-                <span class="highlight-word">Artificial Intelligence</span> ·
                 <span class="highlight-word">Machine Learning</span> ·
                 <span class="highlight-word">Data Science</span> ·
-                <span class="highlight-word">Coding</span>
+                <span class="highlight-word">Programming</span>
             </p>
         </div>
+
     </section>
 
-    <!-- ─── Chat ────────────────────────────────────────────────── -->
+    <!-- ── Main Chat ───────────────────────────────────────── -->
     <main class="chat-container" role="main" aria-label="Chat interface">
         <div class="chat-messages" id="chatMessages" role="log" aria-live="polite">
             <div class="empty-state" id="emptyState">
-                <div class="empty-state-icon" aria-hidden="true">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="6" cy="6" r="2.6"/>
-                        <circle cx="6" cy="18" r="2.6"/>
-                        <circle cx="18" cy="12" r="2.6"/>
-                        <path d="M6 8.6V15.4"/>
-                        <path d="M8.4 7.2L15.6 10.8"/>
-                        <path d="M8.4 16.8L15.6 13.2"/>
-                    </svg>
-                </div>
-                <h2 class="empty-state-title" data-i18n="empty.title">Where should we start?</h2>
-                <p class="empty-state-subtitle" data-i18n="empty.subtitle">Ask about AI, review code, or paste a dataset — Forked AI picks up from there.</p>
+                
             </div>
         </div>
 
-        <!-- ─── Composer ─────────────────────────────────────────── -->
+        <!-- ── Composer ────────────────────────────────────── -->
         <div class="chat-composer">
-            <div class="composer-wrapper">
-                <!-- File preview chips -->
-                <div class="composer-files" id="composerFiles"></div>
+            <div class="composer-container">
+                <!-- File Preview -->
+                <div class="file-preview-container" id="filePreviewContainer" style="display:none;"></div>
 
-                <div class="composer-input-wrap">
+                <div class="composer-input-wrapper">
                     <textarea
                         id="chatInput"
                         class="composer-input"
@@ -159,26 +138,37 @@
                     ></textarea>
 
                     <div class="composer-actions">
-                        <button class="composer-btn" id="fileBtn" type="button" aria-label="Attach files" title="Attach files">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
-                            </svg>
-                            <span class="badge" id="fileBadge" style="display:none;"></span>
-                        </button>
-                        <input type="file" id="fileInput" multiple accept="image/*,.pdf,.txt,.csv,.md,.json,.ipynb,.py,.js,.ts,.jsx,.tsx,.html,.css,.xml,.yaml,.yml,.toml,.env,.sql,.db,.sqlite,.zip,.rar,.7z,.doc,.docx,.xls,.xlsx,.ppt,.pptx" style="display:none;">
+                        <div class="upload-buttons">
+                            <input type="file" id="fileInput" multiple
+                                   accept=".js,.jsx,.ts,.tsx,.vue,.html,.htm,.css,.scss,.sass,.less,.py,.rb,.php,.java,.kt,.kts,.go,.rs,.c,.h,.cpp,.cc,.hpp,.cs,.swift,.m,.scala,.sql,.sh,.bash,.pl,.lua,.r,.dart,.xml,.yaml,.yml,.toml,.ini,.env,.conf,.log,.gitignore,.dockerfile,.tex,.rst,.json,.json5,.graphql,.gql,.proto,.tf,.tfvars,.hcl,.makefile,.mk,.cmake,.gradle,.nim,.crystal,.cr,.zig,.v,.vv,.gleam,.res,.resi,.fs,.fsx,.fsi,.ex,.exs,.erl,.hrl,.clj,.cljs,.cljc,.edn,.cob,.cbl,.for,.f90,.f95,.asm,.s,.nasm,.ps1,.psm1,.psd1,.ahk,.bat,.cmd,.awk,.sed,.r,.rmd,.jl,.d,.ada,.adb,.ads,.vhd,.vhdl,.sv,.svh,.cuda,.cu,.cuh,.opencl,.cl,.webidl,.idl,.wast,.wat,.fsharp,.editorconfig,.prettierrc,.eslintrc,.babelrc,.stylelintrc,.huskyrc,.lintstagedrc,.npmrc,.yarnrc,.pnp.js,.pnp.cjs,.ipynb,.zip,.pdf,.txt,.csv,.md"
+                                   style="display:none;">
+                            <button class="upload-btn file-btn" id="fileBtn"
+                                    aria-label="Attach files" title="Attach files (code, images, docs, zip)">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                                     stroke="currentColor" stroke-width="2"
+                                     stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
+                                </svg>
+                            </button>
 
-                        <button class="composer-btn" id="micBtn" type="button" aria-label="Voice input" title="Voice input">
-                            <svg class="mic-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/>
-                                <path d="M19 10v2a7 7 0 01-14 0v-2"/>
-                                <line x1="12" y1="19" x2="12" y2="23"/>
-                                <line x1="8" y1="23" x2="16" y2="23"/>
-                            </svg>
-                            <span class="pulse-ring"></span>
-                        </button>
+                            <button class="upload-btn mic-btn" id="micBtn"
+                                    aria-label="Record voice" title="Record voice">
+                                <svg class="mic-icon" width="18" height="18" viewBox="0 0 24 24"
+                                     fill="none" stroke="currentColor" stroke-width="2"
+                                     stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                                    <line x1="12" y1="19" x2="12" y2="23"/>
+                                    <line x1="8" y1="23" x2="16" y2="23"/>
+                                </svg>
+                                <span class="mic-pulse-ring"></span>
+                            </button>
+                        </div>
 
                         <button class="send-btn" id="sendBtn" aria-label="Send message">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                                 stroke="currentColor" stroke-width="2.2"
+                                 stroke-linecap="round" stroke-linejoin="round">
                                 <line x1="22" y1="2" x2="11" y2="13"/>
                                 <polygon points="22 2 15 22 11 13 2 9 22 2"/>
                             </svg>
@@ -189,11 +179,13 @@
         </div>
     </main>
 
-    <!-- ─── Scroll to Bottom ───────────────────────────────────── -->
+    <!-- Scroll to bottom button -->
     <button class="scroll-bottom-btn" id="scrollBottomBtn" aria-label="Scroll to bottom">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="7 13 12 18 17 13"/>
-            <polyline points="7 6 12 11 17 6"/>
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2.2"
+             stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="7 8 12 13 17 8"/>
+            <polyline points="7 15 12 20 17 15"/>
         </svg>
     </button>
 
